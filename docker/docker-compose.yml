@@ -1,0 +1,81 @@
+version: '3'
+services:
+
+  #PHP Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: phpapp
+    container_name: app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www
+    volumes:
+      - ../:/var/www
+      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - app-network
+
+  #Nginx Service
+  webserver:
+    image: nginx:alpine
+    container_name: webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "81:80"
+      - "4433:443"
+    volumes:
+      - ../:/var/www
+      - ./nginx/:/etc/nginx/conf.d/
+    networks:
+      - app-network
+
+  #MySQL Service image: mysql:8.0.31
+  #   command:
+  #   - /bin/sh -c npm install --prefix /var/www/backend/
+  db:
+    image: mysql:8.0.31
+    container_name: db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: vue_ecommerce
+      MYSQL_ROOT_PASSWORD: rootroot123
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - dbdata:/var/lib/mysql/
+      - ./mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - app-network
+#MySQL Service image: mysql:8.0.31
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfilevueng
+    image: nodeserver
+    container_name: nodeserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3001:3000"
+    volumes:
+      - ../:/usr/app/
+      - /usr/app/node_modules
+
+
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
+#Volumes
+volumes:
+  dbdata:
+    driver: local
